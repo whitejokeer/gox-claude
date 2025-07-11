@@ -1,0 +1,11 @@
+{
+  "recommendations": [
+    "golang.go",
+    "bradlc.vscode-tailwindcss",
+    "ms-vscode.vscode-json",
+    "redhat.vscode-yaml",
+    "editorconfig.editorconfig",
+    "github.vscode-pull-request-github",
+    "ms-vscode.vscode-go"
+  ]
+}
