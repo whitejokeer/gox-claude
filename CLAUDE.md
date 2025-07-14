@@ -18,12 +18,21 @@ The framework's core abstraction is the .gox file (similar to Vue SFC):
 ### Project Structure
 ```
 my-app/
-├── pages/              # Frontend pages (.gox files) - auto-routed
-├── services/           # Backend services/modules with Go logic
-├── routing/            # Manual routing configuration (optional)
-├── common/             # Shared code (types, utils, contracts)
-├── infra/              # Infrastructure (database, cache, messaging)
-└── gox.config.yaml     # Main configuration
+├── app/                # Frontend application (UI layer)
+│   ├── pages/         # Frontend pages (.gox files) - auto-routed
+│   ├── components/    # Reusable UI components
+│   ├── shared/        # Shared UI resources
+│   │   ├── ui/       # Shared components (--shared flag)
+│   │   └── layouts/  # Layout components
+│   └── routing/      # Page routing configuration
+├── services/          # Backend microservices
+├── common/            # Shared code between app and services
+│   ├── middleware/   # HTTP middleware
+│   └── discovery/    # Service discovery
+├── infra/             # Infrastructure (database, cache, messaging)
+├── docker-compose.yml # Development orchestration
+├── go.work           # Go workspace for multi-module development
+└── gox.config.yaml   # Main configuration
 ```
 
 ### Distributed Architecture
@@ -92,10 +101,13 @@ The gox.config.yaml controls:
 
 ## Implementation Status
 
-This is currently in planning phase. See /plan/ directory for detailed implementation tasks:
-- 15 tasks covering CLI, parser, compiler, routing, dev server, etc.
+Task 2 (CLI Básico) has been completed. The project now uses an `app` directory instead of `gateway` for better frontend developer familiarity.
+
+Current status:
+- ✅ Task 2: CLI básico with context detection, new/generate commands
+- Project structure uses `app/` for UI layer (pages, components, routing)
+- Remaining tasks in /plan/ directory for implementation
 - Each task includes subtasks, acceptance criteria, and comprehensive tests
-- Estimated 65-80 days total development time
 
 ## Project Goals
 

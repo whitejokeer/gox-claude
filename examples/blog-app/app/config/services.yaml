@@ -1,0 +1,14 @@
+# Service Configuration
+# This file defines the available services and their endpoints
+
+services:
+  # Example service configuration
+  # users:
+  #   url: http://localhost:3001
+  #   health: /health
+  #   timeout: 30s
+  # 
+  # products:
+  #   url: http://localhost:3002
+  #   health: /health
+  #   timeout: 30s

@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - APP_ENV=development
+      - PORT=3000
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=blog-app_dev
+      - DB_USER=blog-app
+      - DB_PASSWORD=changeme
+      - JWT_SECRET=your-secret-key-change-in-production
+    depends_on:
+      - postgres
+      - consul
+    networks:
+      - gox-network
+    volumes:
+      - ./app:/app
+    command: air
+
+  consul:
+    image: consul:1.16
+    ports:
+      - "8500:8500"
+      - "8600:8600/udp"
+    command: agent -dev -ui -client=0.0.0.0
+    networks:
+      - gox-network
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=blog-app_dev
+      - POSTGRES_USER=blog-app
+      - POSTGRES_PASSWORD=changeme
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - gox-network
+
+networks:
+  gox-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

@@ -1,0 +1,47 @@
+<template>
+  <div class="post-card">
+    <div class="component-content">
+      <div>Title: {{ .Title }}</div>
+      <div>Excerpt: {{ .Excerpt }}</div>
+      <div>Author: {{ .Author }}</div>
+      <div>Date: {{ .Date }}</div>
+    </div>
+  </div>
+</template>
+
+<go>
+package components
+
+import (
+    "net/http"
+    "github.com/gox-framework/gox/pkg/component"
+)
+
+type PostCard struct {
+    component.Base
+    Title string `gox:"required"`
+    Excerpt string `gox:"required"`
+    Author string `gox:"required"`
+    Date string `gox:"required"`
+}
+
+func (c *PostCard) Validate() error {
+    // Add validation logic here
+    return nil
+}
+
+// Add component methods here
+func (c *PostCard) HandleClick(w http.ResponseWriter, r *http.Request) {
+    // Handle component interactions
+}
+</go>
+
+<style scoped>
+.post-card {
+  /* Component styles */
+}
+
+.component-content {
+  /* Add your styles here */
+}
+</style>

@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: GOX Framework Documentation
+    url: https://gox-framework.dev/docs
+    about: Please check the documentation before opening an issue
+  - name: Discord Community
+    url: https://discord.gg/gox-framework
+    about: Get help from the community
+  - name: Stack Overflow
+    url: https://stackoverflow.com/questions/tagged/gox-framework
+    about: Please ask and answer questions here

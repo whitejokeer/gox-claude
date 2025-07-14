@@ -1,0 +1,145 @@
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+
+builds:
+  - id: gox
+    binary: gox
+    main: ./cmd/gox
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+      - arm
+    goarm:
+      - "7"
+    mod_timestamp: '{{ .CommitTimestamp }}'
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X github.com/gox-framework/gox/pkg/version.Version={{.Version}}
+      - -X github.com/gox-framework/gox/pkg/version.Commit={{.Commit}}
+      - -X github.com/gox-framework/gox/pkg/version.Date={{.Date}}
+      - -X github.com/gox-framework/gox/pkg/version.BuiltBy=goreleaser
+
+archives:
+  - id: gox
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - README.md
+      - LICENSE
+      - CHANGELOG.md
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore'
+      - Merge pull request
+      - Merge remote-tracking branch
+      - Merge branch
+  groups:
+    - title: 'New Features'
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 0
+    - title: 'Bug Fixes'
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 1
+    - title: 'Performance Improvements'
+      regexp: "^.*perf[(\\w)]*:+.*$"
+      order: 2
+    - title: Other
+      order: 999
+
+release:
+  github:
+    owner: gox-framework
+    name: gox
+  draft: false
+  prerelease: auto
+  mode: keep-existing
+  name_template: "{{.ProjectName}}-v{{.Version}}"
+  disable: false
+
+brews:
+  - name: gox
+    repository:
+      owner: gox-framework
+      name: homebrew-tap
+      branch: main
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    url_template: "https://github.com/gox-framework/gox/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    download_strategy: CurlDownloadStrategy
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com
+    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
+    folder: Formula
+    homepage: "https://github.com/gox-framework/gox"
+    description: "GOX Framework - Modern web development with Go and HTMX"
+    license: "MIT"
+    test: |
+      system "#{bin}/gox --version"
+    dependencies:
+      - name: go
+        type: optional
+    install: |
+      bin.install "gox"
+
+dockers:
+  - image_templates:
+      - "goxframework/gox:{{ .Tag }}"
+      - "goxframework/gox:v{{ .Major }}"
+      - "goxframework/gox:v{{ .Major }}.{{ .Minor }}"
+      - "goxframework/gox:latest"
+      - "ghcr.io/gox-framework/gox:{{ .Tag }}"
+      - "ghcr.io/gox-framework/gox:v{{ .Major }}"
+      - "ghcr.io/gox-framework/gox:v{{ .Major }}.{{ .Minor }}"
+      - "ghcr.io/gox-framework/gox:latest"
+    dockerfile: Dockerfile
+    use: buildx
+    build_flag_templates:
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--platform=linux/amd64,linux/arm64"
+
+nfpms:
+  - id: gox
+    package_name: gox
+    vendor: GOX Framework
+    homepage: https://github.com/gox-framework/gox
+    maintainer: GOX Framework Team <team@gox-framework.dev>
+    description: GOX Framework - Modern web development with Go and HTMX
+    license: MIT
+    formats:
+      - deb
+      - rpm
+      - apk

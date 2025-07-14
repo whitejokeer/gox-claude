@@ -1,0 +1,42 @@
+<template>
+  <div class="container mx-auto p-8">
+    <h1 class="text-3xl font-bold mb-6">Home</h1>
+    
+    <!-- Add your page content here -->
+    <div class="content">
+      <p>Welcome to the home page!</p>
+    </div>
+  </div>
+</template>
+
+<go>
+package pages
+
+import (
+    "net/http"
+)
+
+type HomePage struct {
+    Title string
+    // Add your page properties here
+}
+
+func (p *HomePage) BeforeMount(w http.ResponseWriter, r *http.Request) error {
+    p.Title = "Home"
+    // Initialize your page data here
+    return nil
+}
+
+// Add your HTMX handlers here
+func (p *HomePage) HandleAction(w http.ResponseWriter, r *http.Request) {
+    // Handle HTMX requests
+    w.Write([]byte("Action completed"))
+}
+</go>
+
+<style>
+/* Page-specific styles */
+.content {
+  /* Add your styles here */
+}
+</style>

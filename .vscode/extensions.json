@@ -6,6 +6,13 @@
     "redhat.vscode-yaml",
     "editorconfig.editorconfig",
     "github.vscode-pull-request-github",
-    "ms-vscode.vscode-go"
+    "streetsidesoftware.code-spell-checker",
+    "yzhang.markdown-all-in-one",
+    "davidanson.vscode-markdownlint",
+    "eamodio.gitlens",
+    "usernamehw.errorlens",
+    "gruntfuggly.todo-tree",
+    "wayou.vscode-todo-highlight",
+    "ms-vscode.makefile-tools"
   ]
 }

@@ -6,6 +6,9 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/gox-framework/gox/cmd/gox/commands/dev"
+	"github.com/gox-framework/gox/cmd/gox/commands/generate"
+	"github.com/gox-framework/gox/cmd/gox/commands/new"
 	"github.com/gox-framework/gox/pkg/version"
 )
 
@@ -52,6 +55,11 @@ func init() {
 	
 	// Version command
 	rootCmd.SetVersionTemplate(version.String() + "\n")
+	
+	// Add subcommands
+	rootCmd.AddCommand(new.NewCmd)
+	rootCmd.AddCommand(generate.GenerateCmd)
+	rootCmd.AddCommand(dev.DevCmd)
 }
 
 // initConfig reads in config file and ENV variables.

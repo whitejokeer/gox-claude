@@ -12,7 +12,7 @@
 *.out
 
 # Go workspace file
-go.work
+go.work.sum
 
 # Dependency directories
 vendor/
@@ -68,6 +68,21 @@ yarn-error.log*
 # Generated files
 .gox/generated/
 .gox/cache/
+
+# Built binaries
+gox
+/examples/*/gox
+
+# Temporary commit messages
+COMMIT_MESSAGE_*.txt
+
+# Task completion files
+TASK*_COMPLETE.md
+*_COMPLETE.md
+
+# Validation files
+tree-validation.txt
+FINAL_TREE_VALIDATION.md
 
 # Database files
 *.db

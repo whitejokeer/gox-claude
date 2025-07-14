@@ -1,0 +1,39 @@
+<template>
+  <div class="navbar">
+    <div class="component-content">
+    </div>
+  </div>
+</template>
+
+<go>
+package components
+
+import (
+    "net/http"
+    "github.com/gox-framework/gox/pkg/component"
+)
+
+type Navbar struct {
+    component.Base
+}
+
+func (c *Navbar) Validate() error {
+    // Add validation logic here
+    return nil
+}
+
+// Add component methods here
+func (c *Navbar) HandleClick(w http.ResponseWriter, r *http.Request) {
+    // Handle component interactions
+}
+</go>
+
+<style scoped>
+.navbar {
+  /* Component styles */
+}
+
+.component-content {
+  /* Add your styles here */
+}
+</style>

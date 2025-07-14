@@ -1,0 +1,48 @@
+# GOX Framework Configuration
+name: blog-app
+version: 1.0.0
+description: A GOX Framework application
+
+# Architecture
+architecture:
+  pattern: distributed # distributed | monolithic
+  
+# Development
+dev:
+  port: 3000
+  hot_reload: true
+  storybook: true
+  
+# Database
+database:
+  strategy: per-service # per-service | shared
+  type: postgres
+  migrations: auto
+  connection:
+    host: localhost
+    port: 5432
+    name: ${name}_dev
+    user: ${name}
+    password: changeme
+
+# Authentication
+auth:
+  provider: jwt
+  jwt:
+    secret: ${JWT_SECRET}
+    expiry: 24h
+
+# Communication
+communication:
+  protocol: rest
+  
+# Routing
+routing:
+  mode: file-based # file-based | manual
+  router: gin # http | gorilla | gin | echo | fiber
+  
+# Build
+build:
+  output: dist
+  minify: true
+  sourcemaps: true
