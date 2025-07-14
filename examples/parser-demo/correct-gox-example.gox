@@ -1,0 +1,189 @@
+<template auth="required" layout="admin">
+  <div class="dashboard">
+    <h1>{{.Title}}</h1>
+    <p>Welcome {{.CurrentUser.Name}}!</p>
+    
+    <!-- HTMX form sin JavaScript -->
+    <form hx-post="/api/search" 
+          hx-target="#results" 
+          hx-indicator="#spinner">
+      <input type="search" 
+             name="q" 
+             placeholder="Search products..." 
+             hx-trigger="keyup changed delay:500ms" />
+      <div id="spinner" class="htmx-indicator">Searching...</div>
+    </form>
+    
+    <div id="results">
+      {{range .Products}}
+        <product-card 
+          id="{{.ID}}"
+          name="{{.Name}}"
+          price="{{.Price}}"
+          :featured="{{.IsFeatured}}"
+          hx-delete="/api/products/{{.ID}}"
+          hx-confirm="¿Eliminar {{.Name}}?" />
+      {{end}}
+    </div>
+    
+    <shared-button 
+      text="Add Product" 
+      hx-get="/products/new" 
+      hx-target="#modal" />
+    
+    <div id="modal"></div>
+  </div>
+</template>
+
+<go>
+package pages
+
+import (
+    "net/http"
+    "encoding/json"
+)
+
+// DashboardPage - sin herencia, struct simple
+type DashboardPage struct {
+    Title       string   `json:"title"`
+    CurrentUser User     `json:"current_user"`
+    Products    []Product `json:"products"`
+}
+
+type User struct {
+    ID   int    `json:"id"`
+    Name string `json:"name"`
+}
+
+type Product struct {
+    ID         int     `json:"id"`
+    Name       string  `json:"name"`
+    Price      float64 `json:"price"`
+    IsFeatured bool    `json:"is_featured"`
+}
+
+// Constructor - NO BeforeMount, NO lifecycle
+func NewDashboardPage(r *http.Request) (*DashboardPage, error) {
+    user := getUserFromSession(r)
+    if user == nil {
+        return nil, ErrUnauthorized
+    }
+    
+    products, err := loadProducts()
+    if err != nil {
+        return nil, err
+    }
+    
+    return &DashboardPage{
+        Title:       "Product Dashboard",
+        CurrentUser: *user,
+        Products:    products,
+    }, nil
+}
+
+// Handler HTMX puro - retorna HTML parcial
+func (p *DashboardPage) HandleSearch(w http.ResponseWriter, r *http.Request) {
+    query := r.FormValue("q")
+    
+    products := searchProducts(query)
+    
+    // Renderizar solo la parte que HTMX actualizará
+    w.Header().Set("Content-Type", "text/html")
+    renderProductList(w, products)
+}
+
+// Handler para eliminar - estilo HTMX
+func HandleDeleteProduct(w http.ResponseWriter, r *http.Request) {
+    productID := r.PathValue("id")
+    
+    if err := deleteProduct(productID); err != nil {
+        w.WriteHeader(http.StatusInternalServerError)
+        return
+    }
+    
+    // Retornar vacío para que HTMX elimine el elemento
+    w.WriteHeader(http.StatusOK)
+}
+
+// Funciones auxiliares (mock)
+func getUserFromSession(r *http.Request) *User {
+    return &User{ID: 1, Name: "Admin"}
+}
+
+func loadProducts() ([]Product, error) {
+    return []Product{
+        {ID: 1, Name: "Laptop", Price: 999.99, IsFeatured: true},
+        {ID: 2, Name: "Mouse", Price: 29.99, IsFeatured: false},
+    }, nil
+}
+
+func searchProducts(query string) []Product {
+    // Implementación de búsqueda
+    return []Product{}
+}
+
+func renderProductList(w http.ResponseWriter, products []Product) {
+    // Renderizar HTML parcial
+}
+
+func deleteProduct(id string) error {
+    // Eliminar producto
+    return nil
+}
+</go>
+
+<style scoped>
+.dashboard {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+form {
+    margin: 2rem 0;
+    position: relative;
+}
+
+input[type="search"] {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 0.375rem;
+    font-size: 1rem;
+}
+
+.htmx-indicator {
+    display: none;
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.htmx-request .htmx-indicator {
+    display: inline;
+}
+
+#results {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+
+#modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+#modal:not(:empty) {
+    display: flex;
+}
+</style>

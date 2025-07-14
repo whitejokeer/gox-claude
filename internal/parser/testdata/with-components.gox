@@ -1,0 +1,111 @@
+<template auth="required" layout="dashboard">
+  <div class="users-page">
+    <h1>Users</h1>
+    
+    <div class="actions">
+      <shared-button text="Add User" hx-get="/users/new" hx-target="#modal" />
+      <shared-button text="Export" hx-post="/users/export" class="secondary" />
+    </div>
+    
+    <div class="users-grid">
+      {{range .Users}}
+        <user-card 
+          id="{{.ID}}" 
+          name="{{.Name}}" 
+          email="{{.Email}}" 
+          avatar="{{.Avatar}}" />
+      {{end}}
+    </div>
+    
+    <div id="modal"></div>
+  </div>
+</template>
+
+<go>
+package pages
+
+import (
+    "net/http"
+    "encoding/json"
+)
+
+type UsersPage struct {
+    Users []User `json:"users"`
+}
+
+type User struct {
+    ID     int    `json:"id"`
+    Name   string `json:"name"`
+    Email  string `json:"email"`
+    Avatar string `json:"avatar"`
+}
+
+func (p *UsersPage) BeforeMount(w http.ResponseWriter, r *http.Request) error {
+    // Load users from database
+    users, err := loadUsersFromDB()
+    if err != nil {
+        return err
+    }
+    p.Users = users
+    return nil
+}
+
+func (p *UsersPage) HandleNewUser(w http.ResponseWriter, r *http.Request) {
+    // Show new user form
+    w.Header().Set("Content-Type", "text/html")
+    w.Write([]byte(`<form hx-post="/users" hx-target="#users-grid">
+        <input name="name" placeholder="Name" required />
+        <input name="email" placeholder="Email" required />
+        <button type="submit">Create User</button>
+    </form>`))
+}
+
+func (p *UsersPage) HandleExport(w http.ResponseWriter, r *http.Request) {
+    w.Header().Set("Content-Type", "application/json")
+    w.Header().Set("Content-Disposition", "attachment; filename=users.json")
+    json.NewEncoder(w).Encode(p.Users)
+}
+
+func loadUsersFromDB() ([]User, error) {
+    // Mock implementation
+    return []User{
+        {ID: 1, Name: "John Doe", Email: "john@example.com", Avatar: "/avatars/john.jpg"},
+        {ID: 2, Name: "Jane Smith", Email: "jane@example.com", Avatar: "/avatars/jane.jpg"},
+    }, nil
+}
+</go>
+
+<style>
+.users-page {
+    padding: 24px;
+}
+
+.actions {
+    margin: 16px 0;
+    display: flex;
+    gap: 12px;
+}
+
+.users-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+    margin-top: 24px;
+}
+
+#modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#modal:empty {
+    display: none;
+}
+</style>

@@ -1,0 +1,34 @@
+<template>
+  <div class="container">
+    <h1>{{.Title}}</h1>
+    <p>{{.Content}}</p>
+  </div>
+</template>
+
+<go>
+package pages
+
+type SimplePage struct {
+    Title   string
+    Content string
+}
+
+func (p *SimplePage) BeforeMount(w http.ResponseWriter, r *http.Request) error {
+    p.Title = "Simple Page"
+    p.Content = "This is a simple page"
+    return nil
+}
+</go>
+
+<style>
+.container {
+    padding: 20px;
+    margin: 0 auto;
+    max-width: 800px;
+}
+
+h1 {
+    color: #333;
+    font-size: 2rem;
+}
+</style>

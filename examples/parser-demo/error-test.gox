@@ -1,0 +1,12 @@
+<template>
+  <div>Contenido válido</div>
+</template>
+
+<go>
+package invalid
+
+// Sintaxis Go inválida
+func malformed syntax {
+  return
+}
+</go>

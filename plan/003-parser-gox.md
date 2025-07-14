@@ -11,47 +11,54 @@ Alta
 
 ## Dependencias
 - Task 001: Setup inicial del proyecto
-- Task 002: CLI básico (parcial)
+- Task 002: NO BLOQUEANTE - Se puede desarrollar en paralelo
+- Sincronización: Definir estructura .gox antes de empezar
 
 ## Subtasks
 
 ### 3.1 Diseñar AST (Abstract Syntax Tree)
 - [ ] Definir estructura del AST para archivos .gox
-- [ ] Crear tipos para cada sección (Template, Go, Style, Story)
+- [ ] Crear tipos para cada sección (Template, Go, Style)
 - [ ] Diseñar sistema de metadata y atributos
 - [ ] Implementar visitor pattern para el AST
+- [ ] Definir estructura para componentes embebidos
 
 ### 3.2 Implementar lexer/tokenizer
 - [ ] Crear tokenizer para identificar tags de apertura/cierre
 - [ ] Manejar atributos en tags (auth, layout, scoped)
 - [ ] Tokenizar contenido interno respetando sintaxis
 - [ ] Implementar manejo de errores con línea/columna
+- [ ] Detectar componentes custom (`<user-card>`, `<shared-button>`)
 
 ### 3.3 Implementar parser principal
 - [ ] Parser para sección `<template>`
 - [ ] Parser para sección `<go>`
 - [ ] Parser para sección `<style>`
-- [ ] Parser para sección `<story>` (opcional)
 - [ ] Validar estructura y orden de secciones
+- [ ] Manejar secciones opcionales
 
 ### 3.4 Procesamiento de template
 - [ ] Extraer directivas especiales (auth, layout)
 - [ ] Identificar sintaxis Go template (`{{.Variable}}`)
 - [ ] Detectar atributos HTMX (hx-*)
+- [ ] Parsear componentes custom y sus props
+- [ ] Resolver rutas de componentes (components/ vs shared/)
 - [ ] Preservar formato y espaciado original
 
 ### 3.5 Procesamiento de código Go
 - [ ] Validar sintaxis Go usando go/parser
 - [ ] Extraer imports automáticamente
 - [ ] Identificar struct principal del componente
-- [ ] Detectar métodos lifecycle (Mount, BeforeMount, etc.)
-- [ ] Extraer handlers HTMX
+- [ ] Detectar handlers HTTP (HandleFunc pattern)
+- [ ] Identificar props struct para componentes
+- [ ] Extraer métodos HTMX (acciones/validaciones)
 
 ### 3.6 Procesamiento de estilos
-- [ ] Detectar tipo de estilo (CSS, SCSS, Tailwind)
+- [ ] Detectar tipo de estilo (CSS o Tailwind classes)
 - [ ] Manejar atributo `scoped`
 - [ ] Procesar directivas Tailwind (@apply)
 - [ ] Validar sintaxis CSS básica
+- [ ] Preparar para futuro CSS-in-Go si necesario
 
 ## Criterios de Aceptación
 
@@ -59,23 +66,39 @@ Alta
    - Debe parsear archivos .gox válidos sin errores
    - Debe dar mensajes de error claros para archivos inválidos
    - Debe preservar formato y comentarios
+   - Debe detectar componentes y sus dependencias
 
 2. **Estructura AST**
    ```go
    type GoxFile struct {
-       Path     string
-       Template *TemplateNode
-       Go       *GoNode
-       Styles   []*StyleNode
-       Story    *StoryNode
-       Metadata map[string]interface{}
+       Path       string
+       Template   *TemplateNode
+       Go         *GoNode
+       Styles     []*StyleNode
+       Components []ComponentDependency // Componentes que usa
+       Metadata   map[string]interface{}
    }
    
    type TemplateNode struct {
        Content    string
        Auth       string // "required", "role:admin", etc.
        Layout     string
-       Directives []Directive
+       Elements   []Element // Árbol de elementos HTML y componentes
+   }
+   
+   type Element struct {
+       Type       string // "div", "user-card", etc.
+       IsComponent bool
+       Props      map[string]string // Incluye hx-* attributes
+       Children   []Element
+   }
+   
+   type GoNode struct {
+       Source    string
+       Imports   []string
+       MainType  string // "UserCard" struct name
+       Handlers  []Handler
+       Props     *PropsStruct // Si es un componente
    }
    ```
 
@@ -100,6 +123,11 @@ Alta
    // Acceso fácil a secciones
    template := ast.Template.Content
    goCode := ast.Go.Source
+   
+   // Detección de dependencias
+   for _, comp := range ast.Components {
+       fmt.Printf("Uses: %s from %s\n", comp.Name, comp.Path)
+   }
    ```
 
 ## Tests Necesarios
@@ -115,8 +143,14 @@ func TestParseBasicGoxFile(t *testing.T) {
 </template>
 
 <go>
+package pages
+
 type HelloPage struct {
     Name string
+}
+
+func (p *HelloPage) HandleRequest(w http.ResponseWriter, r *http.Request) {
+    // Handler logic
 }
 </go>
 
@@ -132,46 +166,53 @@ type HelloPage struct {
 }
 ```
 
-2. **Test de atributos especiales**
+2. **Test de componentes embebidos**
 ```go
-func TestParseTemplateAttributes(t *testing.T) {
-    input := `<template auth="required" layout="admin">
-  <div>Admin Panel</div>
-</template>`
-    
+func TestParseWithComponents(t *testing.T) {
+    input := `
+<template>
+  <div>
+    <user-card name="{{.User.Name}}" email="{{.User.Email}}" />
+    <shared-button text="Save" hx-post="/save" />
+  </div>
+</template>
+`
     ast, err := ParseString(input)
     assert.NoError(t, err)
-    assert.Equal(t, "required", ast.Template.Auth)
-    assert.Equal(t, "admin", ast.Template.Layout)
+    assert.Len(t, ast.Components, 2)
+    assert.Equal(t, "user-card", ast.Components[0].Name)
+    assert.Equal(t, "components/user-card", ast.Components[0].Path)
+    assert.Equal(t, "shared-button", ast.Components[1].Name) 
+    assert.Equal(t, "shared/ui/button", ast.Components[1].Path)
 }
 ```
 
-3. **Test de errores**
+3. **Test de handlers HTTP**
 ```go
-func TestParseErrors(t *testing.T) {
-    tests := []struct {
-        name    string
-        input   string
-        wantErr string
-    }{
-        {
-            name:    "missing closing tag",
-            input:   `<template><div>Hello`,
-            wantErr: "unclosed tag at line 1",
-        },
-        {
-            name:    "invalid go code",
-            input:   `<go>func invalid syntax</go>`,
-            wantErr: "invalid Go syntax at line 1",
-        },
-    }
-    
-    for _, tt := range tests {
-        t.Run(tt.name, func(t *testing.T) {
-            _, err := ParseString(tt.input)
-            assert.Contains(t, err.Error(), tt.wantErr)
-        })
-    }
+func TestParseHTTPHandlers(t *testing.T) {
+    input := `
+<go>
+package components
+
+type UserForm struct {
+    User *User
+}
+
+func (f *UserForm) HandleSubmit(w http.ResponseWriter, r *http.Request) {
+    // Process form submission
+}
+
+func (f *UserForm) ValidateEmail(email string) error {
+    // HTMX validation endpoint
+    return nil
+}
+</go>
+`
+    ast, err := ParseString(input)
+    assert.NoError(t, err)
+    assert.Len(t, ast.Go.Handlers, 2)
+    assert.Equal(t, "HandleSubmit", ast.Go.Handlers[0].Name)
+    assert.Equal(t, "ValidateEmail", ast.Go.Handlers[1].Name)
 }
 ```
 
@@ -181,10 +222,9 @@ func TestParseErrors(t *testing.T) {
 ```go
 func TestParseRealGoxFiles(t *testing.T) {
     files := []string{
-        "testdata/basic.gox",
-        "testdata/complex.gox",
-        "testdata/with-htmx.gox",
-        "testdata/with-tailwind.gox",
+        "testdata/pages/home.gox",
+        "testdata/components/user-card.gox",
+        "testdata/shared/ui/button.gox",
     }
     
     for _, file := range files {
@@ -201,22 +241,22 @@ func TestParseRealGoxFiles(t *testing.T) {
 }
 ```
 
-2. **Test de casos edge**
+2. **Test de resolución de componentes**
 ```go
-func TestEdgeCases(t *testing.T) {
-    // Archivo solo con template
-    ast1, err := ParseString(`<template><div>Hello</div></template>`)
-    assert.NoError(t, err)
-    assert.Nil(t, ast1.Go)
+func TestComponentResolution(t *testing.T) {
+    // Setup filesystem mock
+    fs := mockfs.New()
+    fs.AddFile("components/user-card.gox", userCardContent)
+    fs.AddFile("shared/ui/button.gox", buttonContent)
     
-    // Múltiples secciones style
-    input := `
-<style>/* Global */</style>
-<style scoped>/* Scoped */</style>
-`
-    ast2, err := ParseString(input)
+    parser := NewParser(WithFilesystem(fs))
+    ast, err := parser.ParseFile("pages/users.gox")
+    
     assert.NoError(t, err)
-    assert.Len(t, ast2.Styles, 2)
+    // Verificar que resolvió correctamente las rutas
+    for _, comp := range ast.Components {
+        assert.True(t, fs.Exists(comp.Path + ".gox"))
+    }
 }
 ```
 
@@ -231,12 +271,24 @@ func BenchmarkParseGoxFile(b *testing.B) {
         _, _ = ParseBytes(content)
     }
 }
+
+func BenchmarkParseWithComponents(b *testing.B) {
+    // Benchmark específico para archivos con muchos componentes
+    content, _ := os.ReadFile("testdata/many-components.gox")
+    
+    b.ResetTimer()
+    for i := 0; i < b.N; i++ {
+        _, _ = ParseBytes(content)
+    }
+}
 ```
 
 ## Definición de Done
 
 - [ ] Parser completo con todas las secciones
 - [ ] AST bien diseñado y documentado
+- [ ] Detección automática de componentes
+- [ ] Resolución de rutas de componentes
 - [ ] Manejo de errores con información útil
 - [ ] Tests unitarios con cobertura > 90%
 - [ ] Tests de integración con archivos reales
@@ -250,4 +302,7 @@ func BenchmarkParseGoxFile(b *testing.B) {
 - El parser debe ser lo suficientemente flexible para futuras extensiones
 - Mantener compatibilidad con herramientas de Go (gofmt, gopls)
 - Pensar en mensajes de error amigables para desarrolladores
-- Considerar implementar un modo de "recuperación" para parsear archivos parcialmente válidos
+- La resolución de componentes debe seguir convenciones:
+  - `<user-card>` → `components/user-card.gox`
+  - `<shared-button>` → `shared/ui/button.gox`
+  - Permitir configuración de estas convenciones más adelante
